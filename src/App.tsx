@@ -37,7 +37,6 @@ function BoardLines() {
         <g key={`v${i}`}><line className="line" x1={50 + i * 100} y1="50" x2={50 + i * 100} y2="450" /><line className="line" x1={50 + i * 100} y1="550" x2={50 + i * 100} y2="950" /></g>
       ))}
       <path className="line" d="M350 50L550 250M550 50L350 250M350 750L550 950M550 750L350 950" />
-      <text className="river-text" x="235" y="515">楚 河</text><text className="river-text" x="665" y="515">漢 界</text>
     </svg>
   )
 }
