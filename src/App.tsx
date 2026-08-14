@@ -57,11 +57,14 @@ function GameBoard({ state, selected, legal, disabled, onPoint }: BoardProps) {
         const pos = { row: rowIndex, col: colIndex }
         const isSelected = selected && samePosition(selected, pos)
         const legalMove = legal.find((move) => samePosition(move.to, pos))
-        const isLast = state.lastMove && (samePosition(state.lastMove.from, pos) || samePosition(state.lastMove.to, pos))
-        const label = piece ? `${piece.color} ${NAMES[piece.type]} at ${String.fromCharCode(97 + colIndex)}${10 - rowIndex}` : `empty ${String.fromCharCode(97 + colIndex)}${10 - rowIndex}`
+        const isLastFrom = Boolean(state.lastMove && samePosition(state.lastMove.from, pos))
+        const isLastTo = Boolean(state.lastMove && samePosition(state.lastMove.to, pos))
+        const wasEnemyMove = state.history.at(-1)?.piece.color === 'black'
+        const moveLabel = isLastFrom ? ', last move origin' : isLastTo ? ', last move destination' : ''
+        const label = piece ? `${piece.color} ${NAMES[piece.type]} at ${String.fromCharCode(97 + colIndex)}${10 - rowIndex}${moveLabel}` : `empty ${String.fromCharCode(97 + colIndex)}${10 - rowIndex}${moveLabel}`
         return (
           <button
-            className={`point ${piece ? 'occupied' : ''} ${isSelected ? 'selected' : ''} ${legalMove ? 'legal' : ''} ${legalMove && piece ? 'capture' : ''} ${isLast ? 'last' : ''}`}
+            className={`point ${piece ? 'occupied' : ''} ${isSelected ? 'selected' : ''} ${legalMove ? 'legal' : ''} ${legalMove && piece ? 'capture' : ''} ${isLastFrom ? 'last-from' : ''} ${isLastTo ? 'last-to' : ''} ${wasEnemyMove && (isLastFrom || isLastTo) ? 'enemy-last' : ''}`}
             style={cellStyle(rowIndex, colIndex)}
             key={`${rowIndex}-${colIndex}`}
             onClick={() => onPoint(pos)}
@@ -95,6 +98,7 @@ export default function App() {
   const [sound, setSound] = useState(true)
   const workerRef = useRef<Worker | null>(null)
   const state = timeline[timeline.length - 1]
+  const latestMove = state.history.at(-1)
   const legal = useMemo(() => selected ? getLegalMovesForPiece(state.board, selected) : [], [selected, state.board])
 
   const announceTone = useCallback((before: GameState, after: GameState) => {
@@ -186,7 +190,10 @@ export default function App() {
         </aside>
 
         <div className="board-column">
-          <div className="status-ribbon" role="status" aria-live="polite"><span>{statusText(state, thinking)}</span><small>{state.history.length ? `Move ${Math.ceil(state.history.length / 2)}` : 'Red moves first'}</small></div>
+          <div className="status-ribbon" role="status" aria-live="polite">
+            <span>{statusText(state, thinking)}</span>
+            <small>{latestMove ? `${latestMove.piece.color === 'black' ? 'Black' : 'Red'} moved · ${latestMove.notation}` : 'Red moves first'}</small>
+          </div>
           <GameBoard state={state} selected={selected} legal={legal} disabled={thinking || state.turn !== 'red'} onPoint={handlePoint} />
           <div className="mobile-actions"><button onClick={undo} disabled={thinking || timeline.length <= 1}>Undo turn</button><button onClick={() => restart()}>Restart</button></div>
         </div>
